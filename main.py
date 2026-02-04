@@ -8,6 +8,28 @@ import requests
 from pathlib import Path
 
 
+PROMPT = """You are a Research Assistant, an expert in academic analysis and scientific communication. Your role is to help researchers quickly grasp the core value and methodology of complex papers.
+
+When analyzing a paper, your summary must follow this exact structure:
+
+1.  **Core Contributions**: What is the primary novelty or value-add of this work?
+2.  **What the Authors Did**: A detailed look at the methodology, experiments, or theoretical framework employed.
+3.  **Key Findings**: The most significant results and data points.
+4.  **Noteworthy Discussion**: Interesting insights, limitations, and future directions mentioned by the authors.
+
+Guidelines:
+- Maintain academic rigor while being clear and concise.
+- Use precise terminology from the relevant field.
+- Your output should be clean Markdown, ready to be saved as a .md file.
+- Use markdown titles/headers for the paper title and the 4 sections ('#' and '##')
+
+Analyze the research paper at the following filepath and provide a structured summary according to the structure above. Output only the formatted summary and nothing else.
+"""
+
+DEFAULT_OUTPUT_DIR = "~/Documents/papers/summaries/"
+DEFAULT_MODEL = "gemini-2.5-flash"
+
+
 def find_reference_page(pdf_path):
     """
     Identifies the page number (0-indexed) where the references section starts.
@@ -89,9 +111,22 @@ def download_arxiv_pdf(url):
 
 
 def main():
-    parser = argparse.ArgumentParser(description="Summarize a PDF paper excluding references.")
-    parser.add_argument("input_path", help="Path to the PDF file or arXiv URL to summarize.")
-    parser.add_argument("--dir", help="Override the default output directory.")
+    parser = argparse.ArgumentParser(
+        description="Summarize a PDF paper excluding references."
+    )
+    parser.add_argument(
+        "input_path", help="Path to the PDF file or arXiv URL to summarize."
+    )
+    parser.add_argument(
+        "--dir",
+        help=f"Output directory.  (default: {DEFAULT_OUTPUT_DIR})",
+        default=DEFAULT_OUTPUT_DIR,
+    )
+    parser.add_argument(
+        "--model",
+        help=f"Specify the version of gemini to be used.  (default: {DEFAULT_MODEL})",
+        default=DEFAULT_MODEL,
+    )
     args = parser.parse_args()
 
     input_path = args.input_path
@@ -118,7 +153,9 @@ def main():
     page_index = find_reference_page(str(pdf_path))
 
     if page_index is not None and page_index > 0:
-        print(f"Found references at page {page_index}. Extracting pages 0 to {page_index-1}...")
+        print(
+            f"Found references at page {page_index}. Extracting pages 0 to {page_index - 1}..."
+        )
         temp_pdf = extract_pages_until(str(pdf_path), page_index - 1)
         target_pdf = temp_pdf
     else:
@@ -127,16 +164,21 @@ def main():
         temp_pdf = None
 
     try:
-        print("Running gemini research_assistant...")
-        cmd = ["gemini", "research_assistant", "--file_path", target_pdf]
-        result = subprocess.run(cmd, capture_output=True, text=True, check=True)
+        print("Running gemini...")
+        target_pdf_path = Path(target_pdf).resolve()
+        full_prompt = f"{PROMPT}\nFilepath: {target_pdf_path.name}"
+
+        cmd = ["gemini", "--model", args.model, "-p", full_prompt]
+        result = subprocess.run(
+            cmd,
+            capture_output=True,
+            text=True,
+            check=True,
+            cwd=str(target_pdf_path.parent),
+        )
         summary_content = result.stdout
 
-        if args.dir:
-            output_dir = Path(args.dir)
-        else:
-            output_dir = Path.home() / "Documents" / "papers" / "summaries"
-            
+        output_dir = Path(args.dir).expanduser()
         output_dir.mkdir(parents=True, exist_ok=True)
 
         summary_filename = f"summary_{pdf_path.stem}.md"
