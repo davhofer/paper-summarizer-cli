@@ -4,7 +4,7 @@ A CLI tool to summarize PDF papers excluding references.
 
 ## Prerequisite
 
-Ensure you have the [Gemini CLI](https://github.com/google/gemini-cli) installed and configured on your system.
+Ensure you have the [Gemini CLI](https://geminicli.com/) installed and configured on your system.
 
 ## Installation
 
