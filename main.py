@@ -13,6 +13,7 @@ PROMPT = """You are a Research Assistant, an expert in academic analysis and sci
 When analyzing a paper, your summary must follow this exact structure:
 
 1.  **Core Contributions**: What is the primary novelty or value-add of this work?
+2. **Background**: A very short summary of the most relevant background required to understand what the authors did and the main contributions.
 2.  **What the Authors Did**: A detailed look at the methodology, experiments, or theoretical framework employed.
 3.  **Key Findings**: The most significant results and data points.
 4.  **Noteworthy Discussion**: Interesting insights, limitations, and future directions mentioned by the authors.
