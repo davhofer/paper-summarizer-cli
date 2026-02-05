@@ -27,8 +27,8 @@ Guidelines:
 Analyze the research paper at the following filepath and provide a structured summary according to the structure above. Output only the formatted summary and nothing else.
 """
 
-DEFAULT_OUTPUT_DIR = "~/Documents/papers/summaries/"
-DEFAULT_MODEL = "gemini-2.5-flash"
+DEFAULT_OUTPUT_DIR = os.environ.get("SUMMARIZE_DIR", "~/Documents/papers/summaries/")
+DEFAULT_MODEL = os.environ.get("SUMMARIZE_MODEL", "gemini-2.5-flash")
 
 
 def find_reference_page(pdf_path):

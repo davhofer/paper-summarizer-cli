@@ -30,6 +30,22 @@ summarize path/to/your/paper.pdf --dir ./my_summaries
 summarize path/to/your/paper.pdf --model gemini-2.0-flash
 ```
 
+## Environment Variables
+
+You can configure default values using environment variables. CLI arguments will always take precedence over environment variables.
+
+| Variable | Description | Default |
+|----------|-------------|---------|
+| `SUMMARIZE_DIR` | Default output directory for summaries. | `~/Documents/papers/summaries/` |
+| `SUMMARIZE_MODEL` | Default Gemini model to use. | `gemini-2.5-flash` |
+
+**Example:**
+```bash
+export SUMMARIZE_DIR="./my_summaries"
+export SUMMARIZE_MODEL="gemini-2.5-pro"
+summarize paper.pdf  # Uses the exported defaults
+```
+
 This will:
 1. Identify the reference section.
 2. Extract all pages before the references.
