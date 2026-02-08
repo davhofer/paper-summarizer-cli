@@ -24,7 +24,7 @@ Guidelines:
 - Your output should be clean Markdown, ready to be saved as a .md file.
 - Use markdown titles/headers for the paper title and the 4 sections ('#' and '##')
 
-Analyze the research paper at the following filepath and provide a structured summary according to the structure above. Output only the formatted summary and nothing else.
+Analyze the provided text (which is the content of a research paper) and provide a structured summary according to the structure above. Output only the formatted summary and nothing else.
 """
 
 DEFAULT_OUTPUT_DIR = os.environ.get("SUMMARIZE_DIR", "~/Documents/papers/summaries/")
@@ -131,18 +131,34 @@ def main():
     args = parser.parse_args()
 
     input_path = args.input_path
-    temp_download = None
+    output_dir = Path(args.dir).expanduser()
 
+    # Determine summary filename before processing
     if input_path.startswith(("http://", "https://")):
         if "arxiv.org" in input_path:
-            try:
-                temp_download = download_arxiv_pdf(input_path)
-                pdf_path = Path(temp_download)
-            except Exception as e:
-                print(f"Error downloading arXiv PDF: {e}")
-                return
+            arxiv_id = input_path.rstrip("/").split("/")[-1]
+            if arxiv_id.endswith(".pdf"):
+                arxiv_id = arxiv_id[:-4]
+            summary_filename = f"summary_arxiv_{arxiv_id}.md"
         else:
             print("Error: Only arXiv URLs are supported at this time.")
+            return
+    else:
+        pdf_path_input = Path(input_path)
+        summary_filename = f"summary_{pdf_path_input.stem}.md"
+
+    output_path = output_dir / summary_filename
+    if output_path.exists():
+        print(f"Summary already exists at: {output_path}. Skipping.")
+        return
+
+    temp_download = None
+    if input_path.startswith(("http://", "https://")):
+        try:
+            temp_download = download_arxiv_pdf(input_path)
+            pdf_path = Path(temp_download)
+        except Exception as e:
+            print(f"Error downloading arXiv PDF: {e}")
             return
     else:
         pdf_path = Path(input_path)
@@ -167,11 +183,27 @@ def main():
     try:
         print("Running gemini...")
         target_pdf_path = Path(target_pdf).resolve()
-        full_prompt = f"{PROMPT}\nFilepath: {target_pdf_path.name}"
+        
+        # Extract text content from the PDF
+        pdf_text_content = ""
+        try:
+            with pymupdf.open(target_pdf_path) as doc:
+                for page in doc:
+                    pdf_text_content += page.get_text() + "\n"
+        except Exception as e:
+            print(f"Error extracting text from PDF: {e}")
+            return
 
-        cmd = ["gemini", "--model", args.model, "-p", full_prompt]
+        if not pdf_text_content.strip():
+            print("Error: Extracted text is empty. The PDF might be scanned or empty.")
+            return
+
+        # Pass prompt in -p and content via stdin
+        cmd = ["gemini", "--model", args.model, "-p", PROMPT]
+        
         result = subprocess.run(
             cmd,
+            input=pdf_text_content,
             capture_output=True,
             text=True,
             check=True,
@@ -179,16 +211,7 @@ def main():
         )
         summary_content = result.stdout
 
-        output_dir = Path(args.dir).expanduser()
         output_dir.mkdir(parents=True, exist_ok=True)
-
-        summary_filename = f"summary_{pdf_path.stem}.md"
-        # If it was a temp file from arXiv, the stem might be random, so let's try to get a better name if possible
-        if temp_download and "arxiv.org" in input_path:
-            arxiv_id = input_path.split("/")[-1]
-            summary_filename = f"summary_arxiv_{arxiv_id}.md"
-
-        output_path = output_dir / summary_filename
 
         with open(output_path, "w", encoding="utf-8") as f:
             f.write(summary_content)

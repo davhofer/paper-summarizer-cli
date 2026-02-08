@@ -1,3 +1,7 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
 [project]
 name = "paper-summarizer-cli"
 version = "0.1.0"
@@ -10,4 +14,4 @@ dependencies = [
 ]
 
 [project.scripts]
-summarize = "main:main"
+summarize = "paper_summarizer_cli.main:main"
