@@ -27,7 +27,7 @@ Guidelines:
 Analyze the provided text (which is the content of a research paper) and provide a structured summary according to the structure above. Output only the formatted summary and nothing else.
 """
 
-DEFAULT_OUTPUT_DIR = os.environ.get("SUMMARIZE_DIR", "~/Documents/papers/summaries/")
+DEFAULT_OUTPUT_DIR = os.environ.get("SUMMARIZE_DIR", "~/notes/papers/summaries/")
 DEFAULT_MODEL = os.environ.get("SUMMARIZE_MODEL", "gemini-2.5-flash")
 
 
@@ -183,7 +183,7 @@ def main():
     try:
         print("Running gemini...")
         target_pdf_path = Path(target_pdf).resolve()
-        
+
         # Extract text content from the PDF
         pdf_text_content = ""
         try:
@@ -200,7 +200,7 @@ def main():
 
         # Pass prompt in -p and content via stdin
         cmd = ["gemini", "--model", args.model, "-p", PROMPT]
-        
+
         result = subprocess.run(
             cmd,
             input=pdf_text_content,
@@ -230,3 +230,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+
